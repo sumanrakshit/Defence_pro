@@ -1,0 +1,134 @@
+
+<div class="grid">
+<div class="col-12 ">
+
+<div class="card">
+    <h5>Template Field</h5>
+    <p-accordion>
+        <p-accordionTab header="Input Field" [selected]="true" class="line-height-3 m-0">
+            <div class="card p-fluid"  >
+                
+                <div class="field">
+                    <label htmlFor="state">Has Host</label>
+					<p-dropdown [options]="check" [(ngModel)]="field.has_host" placeholder="Select a has Host" [showClear]="true"></p-dropdown>
+                </div>
+                <div class="field">
+                    <label htmlFor="state">Has User</label>
+					<p-dropdown [options]="check" [(ngModel)]="field.has_user" placeholder="Select a has user" [showClear]="true"></p-dropdown>
+                </div>
+                <div class="field">
+                    <label htmlFor="field">Field Name</label>
+                    <input
+      #newField
+      (keyup.enter)="addField(newField.value)"
+      (blur)="addField(newField.value); newField.value = ''" pInputText id="field" type="text"
+    />
+    <div style="display: flex;justify-content: end; margin-top: 10px;">
+    <!-- <button type="button" (click)="addField(newField.value)">Add</button> -->
+    <button pButton pRipple label="Add" class="mr- mb-2" (click)="addField(newField.value)" style="height: 30px;width: 100px;"></button>
+    </div>
+    <!-- <ul>
+        <li *ngFor="let hero of heroes">{{ hero }}</li>
+      </ul> -->
+                </div>
+    
+            </div>
+
+            <ng-template pTemplate="footer" >
+                <div style="display: flex;justify-content: end;" >
+                <!-- <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button> -->
+                <button pButton pRipple label="Save"  class="p-button-text" (click)="saveField()" class="p-button-success mr-2 mb-2" style="height: 50px;width: 130px;border-radius: 40px;"></button>
+            </div>
+            </ng-template>
+
+            
+        </p-accordionTab>
+        <p-accordionTab header="Entry Decoy" class="line-height-3 m-0">
+            <div class="grid">
+                <div class="col-12 ">
+                    <div class="card p-fluid"  >
+                        <h5>Decoy Input</h5>
+                        <div class="field" *ngFor="let item of fields">
+                            <ul>
+                                <li  *ngFor="let grp of item.addfields">
+                                    
+                                    <label htmlFor="name1"><h6>{{grp}}</h6> </label>
+                                 
+                            
+                            <input pInputText id="name1" type="text" />
+                        </li>
+                    </ul>
+                        </div>
+                        <!-- <div class="field">
+                            <label htmlFor="email1">Email</label>
+                            <input pInputText id="email1" type="text" />
+                        </div>
+                        <div class="field">
+                            <label htmlFor="age1">Age</label>
+                            <input pInputText id="age1" type="text" />
+                        </div> -->
+            
+                    </div>
+                </div>
+            </div>
+            <ng-template pTemplate="footer" >
+                <div style="display: flex;justify-content: end;" >
+                <!-- <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button> -->
+                <button pButton pRipple label="Generate"  class="p-button-text" (click)="saveDecoy()" class="p-button-success mr-2 mb-2" style="height: 50px;width: 130px;border-radius: 40px;"></button>
+            </div>
+            </ng-template>
+        </p-accordionTab>
+        <p-accordionTab header="Upload File" class="line-height-3 m-0">
+            <div class="grid">
+                <div class="col-12">
+                    <div class="card">
+                        <h5>Upload file for decoy</h5>
+                        <p-fileUpload name="demo[]" url="./upload.php" (onUpload)="onUpload($event)"
+                                      [multiple]="true" accept="image/*" [maxFileSize]="1000000">
+                            <ng-template pTemplate="content">
+                                <ul *ngIf="uploadedFiles.length">
+                                    <li *ngFor="let file of uploadedFiles">{{file.name}} - {{file.size}} bytes</li>
+                                </ul>
+                            </ng-template>
+                        </p-fileUpload>
+            
+                        <!-- <h5>Basic</h5>
+                        <p-fileUpload mode="basic" name="demo[]" url="./upload.php" accept="image/*" [maxFileSize]="1000000" (onUpload)="onBasicUpload()"></p-fileUpload> -->
+            
+                    </div>
+                </div>
+            </div>
+        </p-accordionTab>
+        <p-accordionTab header="Generate Decoy" class="line-height-3 m-0">
+            <div class="grid">
+                <div class="col-12">
+                    <div class="card">
+            <p  style=" padding:10px ; margin: 2px;">
+                Generate Decoy File ...Please Download
+              </p>
+      
+              
+              <!-- <button (click)="downlaod()">Downlaod</button> -->
+              
+              <br/><br/>
+              <div  class="container">
+              <div class="vertical-center">
+              <button
+              pButton pRipple type="button"
+               class="p-button-success mr-2 mb-2"
+                href="javascript:void(0)"
+                style="cursor: pointer"
+                (click)="downlaod()"
+              >
+                Download Decoy
+              </button>
+            </div>
+          </div>
+        </div>
+                </div>
+            </div>
+        </p-accordionTab>
+    </p-accordion>
+</div>
+</div>
+</div>
