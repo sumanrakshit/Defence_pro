@@ -1,0 +1,247 @@
+package com.Innspark.spring.boot.angularlogin.security.jwt;
+
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
+import org.springframework.web.util.WebUtils;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.AuthenticationException;
+
+import com.Innspark.spring.boot.angularlogin.entity.User;
+import com.Innspark.spring.boot.angularlogin.security.services.UserDetailsImpl;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.websocket.Session;
+import io.jsonwebtoken.*;
+
+
+// Create JWT token
+@Component
+public class JwtUtils {
+	
+	
+	
+	
+    private final String secret_key = "9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d2b5f8e3a9c8b5f6v8a3d9";
+    private long accessTokenValidity = 60*60*1000;
+
+    private final JwtParser jwtParser ;
+
+    private final String TOKEN_HEADER = "Authorization";
+    private final String TOKEN_PREFIX = "Bearer ";
+	
+	
+   
+
+    @SuppressWarnings("deprecation")
+	public JwtUtils(){
+        this.jwtParser = Jwts.parser().setSigningKey(secret_key);
+    }
+
+	
+    @SuppressWarnings("deprecation")
+	public String createToken(UserDetailsImpl userDetails) {
+        Claims claims = Jwts.claims().setSubject(userDetails.getUsername());
+        claims.put("Name",userDetails.getUsername());
+        claims.put("Role",userDetails.getPrivelege());
+        claims.put("FirstLogin",userDetails.isFirstLogin());
+        claims.put("Group",userDetails.getAuthorities());
+        Date tokenCreateTime = new Date();
+        Date tokenValidity = new Date(tokenCreateTime.getTime() + TimeUnit.MINUTES.toMillis(accessTokenValidity));
+        return Jwts.builder()
+        		
+                .setClaims(claims)
+                .setExpiration(tokenValidity)
+                .signWith(SignatureAlgorithm.HS256, secret_key)
+                .compact();
+    }
+	
+    
+    private Claims parseJwtClaims(String token) {
+        return jwtParser.parseClaimsJws(token).getBody();
+    }
+
+    public Claims resolveClaims(HttpServletRequest req) {
+        try {
+            String token = resolveToken(req);
+            if (token != null) {
+                return parseJwtClaims(token);
+            }
+            return null;
+        } catch (ExpiredJwtException ex) {
+            req.setAttribute("expired", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            req.setAttribute("invalid", ex.getMessage());
+            throw ex;
+        }
+    }
+    public String resolveToken(HttpServletRequest request) throws AuthenticationException{
+
+        String bearerToken = request.getHeader(TOKEN_HEADER);
+        
+
+        
+        if (bearerToken != null && bearerToken.startsWith(TOKEN_PREFIX)) {
+            return bearerToken.substring(TOKEN_PREFIX.length());
+        }
+//        else if(bearerToken == null && bearerToken.startsWith(TOKEN_PREFIX))
+//        {
+//        	throw new JwtException("No JWT token found in request headers");
+//        }
+//      String header = request.getHeader("Authorization");
+//
+//      if (header == null || !header.startsWith("Bearer ")) {
+//          throw new JwtException("No JWT token found in request headers");
+//      }
+      return null;
+    }
+
+    public boolean validateClaims(Claims claims) throws AuthenticationException {
+        try {
+            return claims.getExpiration().after(new Date());
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+	
+    public String getUserName(Claims claims) {
+        return claims.getSubject();
+    }
+
+    private List<String> getGrop(Claims claims) {
+        return (List<String>) claims.get("groups");
+    }
+	
+	  private Key key() {
+//return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+//  byte[] keyBytes = Decoders.BASE64.decode(this.jwtSecret);
+  byte[] keyBytes = this.secret_key.getBytes(StandardCharsets.UTF_8);
+  return Keys.hmacShaKeyFor(keyBytes);
+  
+  
+}
+	
+	
+	
+	
+//	
+//	private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
+//	
+//	 @Value("${inspark.jwtSecret}")
+//	  private String jwtSecret;
+//
+//	  @Value("${innspark.jwtExpirationMs}")
+//	  private int jwtExpiration;
+//
+//	  @Value("innspark.jwtCookieName")
+//	  private String jwtCookie;
+//	  
+//	  
+//	  
+//	  
+	  //Get the JWT Token from Cookies
+	  public String getJwtFromCookies(HttpServletRequest request) {
+		    Cookie cookie = WebUtils.getCookie(request, "suman_coder");
+		    
+		    
+		    if (cookie != null) {
+		      return cookie.getValue();
+		    } else {
+		      return null;
+		    }
+		  }
+//
+		  public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal) {
+//		    String jwt = generateTokenFromUsername(userPrincipal.getUsername());
+		    String jwt=createToken(userPrincipal);
+		    ResponseCookie cookie = ResponseCookie.from("suman_coder", jwt).path("/innspark/").maxAge(24 * 60 * 60).httpOnly(true).build();
+		    return cookie;
+		  }
+//		  
+//
+		  public ResponseCookie getCleanJwtCookie() {
+		    ResponseCookie cookie = ResponseCookie.from("suman_coder", null).path("/innspark/").build();
+		    return cookie;
+		  }
+//
+//		  public String getUserNameFromJwtToken(String token) {
+//		    return Jwts.parserBuilder().setSigningKey(key()).build()
+//		        .parseClaimsJws(token).getBody().getSubject();
+//		    
+//		  }
+//		  
+//		  private Key key() {
+////		    return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+////			  byte[] keyBytes = Decoders.BASE64.decode(this.jwtSecret);
+//			  byte[] keyBytes = this.jwtSecret.getBytes(StandardCharsets.UTF_8);
+//			  return Keys.hmacShaKeyFor(keyBytes);
+//			  
+//			  
+//		  }
+//		  
+//		  
+//		  
+//		  public boolean validateJwtToken(String authToken) {
+//			    try {
+//			      Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
+//			      return true;
+//			    } catch (MalformedJwtException e) {
+//			      logger.error("Invalid JWT token: {}", e.getMessage());
+//			    } catch (ExpiredJwtException e) {
+//			      logger.error("JWT token is expired: {}", e.getMessage());
+//			    } catch (UnsupportedJwtException e) {
+//			      logger.error("JWT token is unsupported: {}", e.getMessage());
+//			    } catch (IllegalArgumentException e) {
+//			      logger.error("JWT claims string is empty: {}", e.getMessage());
+//			    }
+//
+//			    return false;
+//			  }
+//			  
+			  public String generateTokenFromUsername(String username) { 
+//					User user = (User) authentication.getPrincipal();
+//					Claims claims = Jwts.claims().setSubject(user.getUsername());
+
+				  
+			    return Jwts.builder()
+			              .setSubject(username)
+			              .setIssuedAt(new Date())
+			              .setExpiration(new Date((new Date()).getTime() + accessTokenValidity))
+			              .signWith(key(), SignatureAlgorithm.HS256)
+			              .compact();
+			    
+			    
+			  
+			  }
+	  
+//			  public String generateToken(Authentication authentication) {
+//					User user = (User) authentication.getPrincipal();
+//					Claims claims = Jwts.claims().setSubject(user.getUsername());
+//
+//					final long nowMillis = System.currentTimeMillis();
+//					final long expMillis = nowMillis + jwtExpiration;
+//
+//					Date exp = new Date(expMillis);
+//
+//					return Jwts.builder().setClaims(claims).setIssuedAt(new Date(nowMillis)).setExpiration(exp)
+//							.signWith(SignatureAlgorithm.HS256, jwtSecret).compact();
+//				}
+	  
+
+}

@@ -1,0 +1,213 @@
+package com.Innspark.spring.boot.angularlogin.entity;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.hibernate.annotations.ManyToAny;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Entity
+@Table(name="userinfo")
+
+//User has properties id, username, password(system generate), privelege(Role), isFirstLogin(By default true), group(List of group Link with many to many relationship) 
+public class User {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private int id;
+	
+	@Column(nullable = false)
+	private String username;
+	
+	@Column
+	private String name;
+	
+	@Column(nullable = false)
+	 private String password;
+	@Column(nullable=true)
+	private String role;
+	@Column
+	private boolean isFirstLogin;
+	@Column
+	private String ipadress;
+	@Column
+	private Long created_date;
+	@Column
+	private int creator_id;
+	
+	
+	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinTable(name="user_groups", joinColumns = @JoinColumn(name="user_id"),
+	inverseJoinColumns = @JoinColumn(name="group_id"))
+	
+	private Set<Group> groups=new HashSet<>();
+	
+	
+	 
+	public boolean isIsFirstLogin() {
+		return isFirstLogin;
+	}
+	public void setIsFirstLogin(boolean isFirstLogin) {
+		isFirstLogin = isFirstLogin;
+	}
+	public String getUsername() {
+		return username;
+	}
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+		
+	public boolean isFirstLogin() {
+		return isFirstLogin;
+	}
+	public void setFirstLogin(boolean isFirstLogin) {
+		this.isFirstLogin = isFirstLogin;
+	}
+	public Set<Group> getGroups() {
+		return groups;
+	}
+	public void setGroups(Set<Group> groups) {
+		this.groups = groups;
+		
+	}
+	public User( String username, String password) {
+		super();
+		
+		this.username = username;
+		this.password = password;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getRole() {
+		return role;
+	}
+	public void setRole(String role) {
+		this.role = role;
+	}
+	public String getIpadress() {
+		return ipadress;
+	}
+	public void setIpadress(String ipadress) {
+		this.ipadress = ipadress;
+	}
+	public String getCreateddate() {
+		return createddate;
+	}
+	public void setCreateddate(String createddate) {
+		this.createddate = createddate;
+	}
+	public int getAdduserid() {
+		return adduserid;
+	}
+	public void setAdduserid(int adduserid) {
+		this.adduserid = adduserid;
+	}
+	public User(int id, String username, String name, String password, String role, boolean isFirstLogin,
+			String ipadress, String createddate, int adduserid, Set<Group> groups) {
+		super();
+		this.id = id;
+		this.username = username;
+		this.name = name;
+		this.password = password;
+		this.role = role;
+		this.isFirstLogin = isFirstLogin;
+		this.ipadress = ipadress;
+		this.createddate = createddate;
+		this.adduserid = adduserid;
+		this.groups = groups;
+	}
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", username=" + username + ", name=" + name + ", password=" + password + ", role="
+				+ role + ", isFirstLogin=" + isFirstLogin + ", ipadress=" + ipadress + ", createddate=" + createddate
+				+ ", adduserid=" + adduserid + ", groups=" + groups + "]";
+	}
+	public User() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	
+	
+	
+	
+//	public User(String username, String password, String privelege) {
+//		super();
+//		this.username = username;
+//		this.password = password;
+//		this.privelege = privelege;
+//	}
+	
+//	public User(int id, String username, String password, String privelege, boolean isFirstLogin) {
+//		super();
+//		this.id = id;
+//		this.username = username;
+//		this.password = password;
+//		this.privelege = privelege;
+//		isFirstLogin = isFirstLogin;
+//	}
+	
+//	public User(boolean isFirstLogin) {
+//		super();
+//		isFirstLogin = isFirstLogin;
+//	}
+
+
+	
+//	public User(int id, String username, String password, String privelege, boolean isFirstLogin, Set<Group> groups) {
+//		super();
+//		this.id = id;
+//		this.username = username;
+//		this.password = password;
+//		this.privelege = privelege;
+//		this.isFirstLogin = isFirstLogin;
+//		this.groups = groups;
+//	}
+//	@Override
+//	public String toString() {
+//		return "User [id=" + id + ", username=" + username + ", password=" + password + ", privelege=" + privelege
+//				+ ", isFirstLogin=" + isFirstLogin + ", groups=" + groups + "]";
+//	}
+	
+	 
+	 
+	
+
+}

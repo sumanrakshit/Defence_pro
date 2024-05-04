@@ -1,0 +1,423 @@
+package com.Innspark.spring.boot.angularlogin.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpHeaders;
+
+import com.Innspark.spring.boot.angularlogin.entity.Previlege;
+import com.Innspark.spring.boot.angularlogin.entity.Role;
+import com.Innspark.spring.boot.angularlogin.entity.User;
+import com.Innspark.spring.boot.angularlogin.security.jwt.JwtUtils;
+import com.Innspark.spring.boot.angularlogin.security.services.UserDetailsImpl;
+import com.Innspark.spring.boot.angularlogin.service.UserService;
+import com.Innspark.spring.boot.angularlogin.payload.AddRequest;
+import com.Innspark.spring.boot.angularlogin.payload.ErrorRes;
+import com.Innspark.spring.boot.angularlogin.payload.LoginRequest;
+
+
+
+import com.Innspark.spring.boot.angularlogin.payload.UserResponse;
+import com.Innspark.spring.boot.angularlogin.repository.RoleRepository;
+
+@CrossOrigin(origins = "http://localhost:4200")
+@RestController
+@RequestMapping("/api")
+
+public class UserController {
+	
+	@Autowired
+	private RoleRepository roleRepository;
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private JwtUtils jwtUtils;
+	
+	 @Autowired
+	 AuthenticationManager authenticationManager;
+	 
+	 
+	 
+	//------------------------------------Authenticate	User---------------------------------------------
+		
+//		Login User (http://localhost:8080/api/loginuser)
+	
+	@ResponseBody
+	@PostMapping("/loginuser")
+	public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest)
+	{
+		
+		boolean success=false;
+		try
+		{
+			
+			Authentication authentication = authenticationManager
+			        .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+			if(authentication.isAuthenticated())
+			{
+				success=true;
+			}
+			else
+			{
+				success=false;
+			}
+			
+			System.out.println("Is authenticate " + authentication.isAuthenticated());
+			String username=authentication.getName();
+			System.out.println(" username " + username);
+			
+//			 User user= new User(username,"");
+//			  User users=(User) authentication.getPrincipal();
+			 UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+			 System.out.println("Userdetails " + userDetails.getAuthorities());
+			 System.out.println("usedet"+ userDetails.getUsername());
+//			  System.out.println(" user "+ user.getPrivelege());
+			  String token=jwtUtils.createToken(userDetails);
+			  List<String> groups = userDetails.getAuthorities().stream()
+			            .map(item -> item.getAuthority())
+			            .collect(Collectors.toList());
+			  
+			  System.out.println("Token " +token );
+			  
+			 
+			  
+			  System.out.println("Group " + groups);
+
+				 String rolename=userDetails.getRole();
+				 String groupname="";
+				 for(String grp:groups) {
+					 groupname=grp;
+				 }
+				 Role role=roleRepository.findByNameAndOrg(rolename, groupname);
+				 
+			  ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+			  
+			UserResponse userResponse=  new UserResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getRole(), userDetails.isFirstLogin(), groups, role.getPrivelege(),token);
+			
+			if(success)
+			{
+				 return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, token.toString()).body(userResponse);
+			}
+			
+			else
+			{
+				return new ResponseEntity<>("Not authenticate ..please check", HttpStatus.NOT_FOUND);
+			}
+			
+//			return ResponseEntity.ok(userResponse);
+		}
+		catch(BadCredentialsException e)
+		{
+			ErrorRes errorResponse = new ErrorRes(HttpStatus.BAD_REQUEST,"Invalid username or password");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+
+		}
+		catch (Exception e){
+            ErrorRes errorResponse = new ErrorRes(HttpStatus.BAD_REQUEST, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+		
+	}
+	
+	
+//	LogOut User (http://localhost:8080/api/signout)
+	
+	@PostMapping("/signout")
+	  public ResponseEntity<?> logoutUser() {
+	    ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
+	    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
+	        .body("You've been signed out!");
+	  }
+
+	
+	
+	
+	
+	/* -----------------------------------user  ------------------------*/
+	
+	
+	
+	
+	
+//	 Add new User (http://localhost:8080/api/adduser)
+	
+	@CrossOrigin("*")
+	@PostMapping("/adduser")
+	public ResponseEntity<User> addUser(@RequestBody(required = false) AddRequest user1)
+	{
+		User user=userService.addUser(user1);
+		return new ResponseEntity<>(user, HttpStatus.OK);
+	}
+	
+	
+//	Get all User (http://localhost:8080/api/alluser)
+	
+	@GetMapping("/alluser")
+	public List<User> getAllUser()
+	{
+		List<User> lstUsr=new ArrayList<User>();
+		lstUsr=userService.getAllUser();
+		
+		
+		
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+//		System.out.println("Chuthiya "+ userDetails.getId());
+        String username = authentication.getName();
+        System.out.println("username1" + username);
+		
+		
+		
+		
+		
+		return lstUsr;
+	}
+	
+//	Get User by id(http://localhost:8080/api/usr/{id})
+	
+	@GetMapping("/getuser/{id}")
+	public User getById(@PathVariable("id") int id)
+	{
+		User usr=userService.getById(id);
+		return usr;
+		
+	} 
+	
+	
+//	edit User (http://localhost:8080/api/edit/{id})
+	
+	@PutMapping("/edituser/{id}")
+	public ResponseEntity<?> updateUser( @PathVariable int id, @RequestBody User user1)
+	{
+		User user=userService.updateUser( id,user1);
+		return new ResponseEntity<>(user,HttpStatus.OK); 
+		
+	}
+	
+	// Change User Password (http://localhost:8080/api/changepwd/{id})
+   //	when user first login go to change password page, next time go to user details page
+	
+	@PutMapping("/changeuserpwd/{id}")
+	public ResponseEntity<?> changePassword(@PathVariable("id") int id, @RequestBody User user1)
+	{
+		userService.changePassword(id, user1);
+		return new ResponseEntity<>("Change Password successfully", HttpStatus.OK);
+		
+	}
+	
+	
+	
+//	-----------------------ROLE ------------------------------------------------------
+	
+	
+//	Add Role with  field privilege, organization, name of this role(http://localhost:8080/api/addrole)
+	
+	@PostMapping("/addrole")
+	public ResponseEntity<Role> addRoles(@RequestBody Role role)
+	{
+		
+		Role role1=userService.addRoles(role);
+		System.out.println("Successfully add Roles");
+		return new ResponseEntity<>(role1, HttpStatus.OK);
+		
+	}
+	
+//   Get all role	(http://localhost:8080/innspark/allroles)
+	
+	@GetMapping("/allrole")
+	public List<Role> getAllRoles()
+	{
+		List<Role> roles=userService.getAllRole();
+		return roles;
+	}
+	
+	//Edit Role with role id (http://localhost:8080/innspark/editrole/{id})
+	@PutMapping("editrole/{id}")
+	public String editrole(@PathVariable Integer id, @RequestBody Role role) {
+		//TODO: process PUT request
+		String str=userService.editrole(id,role);
+
+		return str;
+	}
+	
+	//Delete Role with role id (http://localhost:8080/innspark/delete/{id})
+	@DeleteMapping("deleterole/{id}")
+	public String deleterole(@PathVariable Integer id){
+		String str=userService.deleterole(id);
+		return str;
+	}
+	
+	
+	
+//	----------------------------------------------------Privilege------------------------------------------------- 
+	
+
+//	Add Previlege (http://localhost:8080/innspark/addpvg)
+	
+	@PostMapping("/addpvg") 
+	public ResponseEntity<?> addPrevilege (@RequestBody Previlege priPrevilege)
+	{
+		Previlege prv=userService.addPrivilege(priPrevilege);
+		
+		return new ResponseEntity<>(prv, HttpStatus.OK);
+	}
+	
+	
+//Get all previlege List (http://localhost:8080/innspark/allpvg)	
+	
+	@GetMapping("/allpvg")
+	public List<Previlege> findall(){
+		return userService.getAllPvg();
+	}
+	
+//	@PutMapping("/editpvg/{id}")
+//	public String editpvg(@RequestBody Previlege pvg,@RequestParam String id) {
+//		
+//		return null;
+//	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+//	@GetMapping("/login/{username}/{password}")
+//	public  Boolean loginUser(@PathVariable("username") String username1, @PathVariable("password") String password1)
+//	{
+//		boolean res=userService.loginUser(username1, password1);
+//		if(res==false)
+//		{
+//			return false;
+//		}
+//		return res;
+//		
+//	}
+	
+	
+	
+	
+//	@PostMapping("/login")
+//	public ResponseEntity<?> loginUser(@RequestBody LoginRequest usr1) throws Exception  
+//	{
+//		System.out.println("check ");
+//		try
+//		{
+//			 Authentication authentication = authenticationManager
+//				        .authenticate(new UsernamePasswordAuthenticationToken(usr1.getUsername(), usr1.getPassword()));
+//			 System.out.println("is user Authenticate"+ authentication.isAuthenticated());
+//			 SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//			    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+//			    System.out.println("user " + userDetails);
+//			    
+////			    User users=(User) authentication.getPrincipal();
+////			UserDetailsImpl userDetails=userService.loginUser(usr1);
+//			
+//
+//			    ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+//			    
+//			    List<String> groups = userDetails.getAuthorities().stream()
+//			            .map(item -> item.getAuthority())
+//			            .collect(Collectors.toList());
+//			    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString()).body(new UserResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getPrivelege(), userDetails.isFirstLogin(), groups));
+//	            
+//		}
+//		catch(BadCredentialsException e)
+//		{
+//			throw new Exception("Incorrect username or password", e);
+//		}
+//		
+//		
+//		 
+//		 
+//		  
+//
+//		      
+//
+//		
+////		User user=userService.loginUser(usr1);
+////		
+////			return new ResponseEntity<>(user,HttpStatus.OK);
+//		
+//	}
+//
+	
+	
+	
+	
+	
+//	@RequestMapping
+//	@PreAuthorize("hasGroup()")
+//	public void Usergroup()
+//	{
+//		
+//	}
+	
+//check Payload permission
+	@GetMapping("/checkpayload")
+	public Boolean isPayloadaccess(@RequestParam String role, @RequestParam String org)
+	{
+		boolean res=false;
+		res=userService.isPayload(role, org);
+		return res;
+	}
+	
+	/* check role Permission */
+	
+	@GetMapping("/checkrole")
+	public Boolean isRoleaccess(@RequestParam String role, @RequestParam String org)
+	{
+		boolean res;
+		res=userService.isRoleAccess(role, org);
+		return res;
+	}
+	
+	
+//	check add user permision
+	@GetMapping("/checkadduser")
+	public Boolean isUseraccess(@RequestParam String role, @RequestParam String org)
+	{
+		boolean res;
+		res=userService.isUserAccess(role, org);
+		return res;
+	}
+	
+	
+}

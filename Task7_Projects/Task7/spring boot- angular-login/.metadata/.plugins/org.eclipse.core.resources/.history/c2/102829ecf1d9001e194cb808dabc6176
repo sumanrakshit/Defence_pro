@@ -1,0 +1,112 @@
+
+package com.Innspark.spring.boot.angularlogin.entity;
+
+import java.util.List;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(name="roles")
+//Role has properties id, name, privelege(List of Previlege), dte(create date of this role )
+public class Role {
+	
+	
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private int id;
+	
+	private String name;
+	
+	private String org;
+	
+	private List<String> privelege;
+	
+	private long create_date;
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getOrg() {
+		return org;
+	}
+
+	public void setOrg(String org) {
+		this.org = org;
+	}
+
+	public List<String> getPrivelege() {
+		return privelege;
+	}
+
+	public void setPrivelege(List<String> privelege) {
+		this.privelege = privelege;
+	}
+
+	public String getDte() {
+		return dte;
+	}
+
+	public void setDte(String dte) {
+		this.dte = dte;
+	}
+
+//	public Role(int id, String name, String org, List<String> privelege) {
+//		super();
+//		this.id = id;
+//		this.name = name;
+//		this.org = org;
+//		this.privelege = privelege;
+//	}
+	
+
+	public Role(int id, String name, String org, List<String> privelege, String dte) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.org = org;
+		this.privelege = privelege;
+		this.dte = dte;
+	}
+	
+
+	public Role(List<String> privelege) {
+	super();
+	this.privelege = privelege;
+}
+	
+	public Role() {
+		super();
+			}
+
+	@Override
+	public String toString() {
+		return "Role [id=" + id + ", name=" + name + ", org=" + org + ", privelege=" + privelege + "]";
+	}
+	
+	
+	
+
+}
